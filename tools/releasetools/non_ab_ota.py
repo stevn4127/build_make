@@ -227,6 +227,14 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   script.SetPermissionsRecursive("/tmp/install", 0, 0, 0o755, 0o644, None, None)
   script.SetPermissionsRecursive("/tmp/install/bin", 0, 0, 0o755, 0o755, None, None)
 
+  if target_info.get("system_root_image") == "true":
+    sysmount = "/"
+  else:
+    sysmount = "/system"
+
+  if OPTIONS.backuptool:
+    script.RunBackup("backup", sysmount, target_info.get('use_dynamic_partitions') == "true")
+
   # All other partitions as well as the data wipe use 10% of the progress, and
   # the update of the system partition takes the remaining progress.
   system_progress = 0.9 - (len(block_diff_dict) - 1) * 0.1
@@ -257,6 +265,12 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
       "boot.img", "boot.img", OPTIONS.input_tmp, "BOOT")
   common.CheckSize(boot_img.data, "boot.img", target_info)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
+
+  device_specific.FullOTA_PostValidate()
+
+  if OPTIONS.backuptool:
+    script.ShowProgress(0.02, 10)
+    script.RunBackup("restore", sysmount, target_info.get('use_dynamic_partitions') == "true")
 
   script.WriteRawImage("/boot", "boot.img")
 
@@ -641,7 +655,6 @@ def WriteFingerprintAssertion(script, target_info, source_info):
 
 class NonAbOtaPropertyFiles(PropertyFiles):
   """The property-files for non-A/B OTA.
-
   For non-A/B OTA, the property-files string contains the info for METADATA
   entry, with which a system updater can be fetched the package metadata prior
   to downloading the entire package.
@@ -654,13 +667,11 @@ class NonAbOtaPropertyFiles(PropertyFiles):
 
 def _WriteRecoveryImageToBoot(script, output_zip):
   """Find and write recovery image to /boot in two-step OTA.
-
   In two-step OTAs, we write recovery image to /boot as the first step so that
   we can reboot to there and install a new recovery image to /recovery.
   A special "recovery-two-step.img" will be preferred, which encodes the correct
   path of "/boot". Otherwise the device may show "device is corrupt" message
   when booting into /boot.
-
   Fall back to using the regular recovery.img if the two-step recovery image
   doesn't exist. Note that rebuilding the special image at this point may be
   infeasible, because we don't have the desired boot signer and keys when
