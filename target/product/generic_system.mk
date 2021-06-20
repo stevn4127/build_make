@@ -21,10 +21,8 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_default.mk)
 # Add adb keys to debuggable AOSP builds (if they exist)
 $(call inherit-product-if-exists, vendor/google/security/adb/vendor_key.mk)
 
-# Enable updating of APEXes on 6th generation Pixel devices only
-ifneq (,$(filter oriole raven bluejay, $(TARGET_PRODUCT)))
-    $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
-endif
+# Enable updating of APEXes
+$(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 
 # Shared java libs
 PRODUCT_PACKAGES += \
@@ -134,3 +132,5 @@ _my_allowed_list := $(_base_mk_allowed_list)
 _my_paths := \
   $(TARGET_COPY_OUT_ROOT)/ \
   $(TARGET_COPY_OUT_SYSTEM)/ \
+
+$(call require-artifacts-in-path, $(_my_paths), $(_my_allowed_list))
