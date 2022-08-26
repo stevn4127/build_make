@@ -1958,6 +1958,8 @@ function showcommands() {
           -f $OUT_DIR/combined-${TARGET_PRODUCT}.ninja \
           -t commands "$@")
     fi
+export RELAX_USES_LIBRARY_CHECK := true
+export SKIP_ABI_CHECKS=true
 }
 
 validate_current_shell
